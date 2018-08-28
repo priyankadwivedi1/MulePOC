@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:apikit="http://www.mulesoft.org/schema/mule/apikit" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/apikit http://www.mulesoft.org/schema/mule/apikit/current/mule-apikit.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
+    <apikit:mapping-exception-strategy name="demoProject-apikit-exception-strategy" doc:description="Exception-strategy for customer-offer api's">
+       <apikit:mapping statusCode="404" doc:description="handle scenario for Resource Not Found Exception">
+			<apikit:exception
+				value="org.mule.module.apikit.exception.NotFoundException" />
+			<logger message="[mcd-uuid = #[(if(message.inboundProperties.'mcd-uuid' != null) {(message.inboundProperties.'mcd-uuid')} else {''})]] customer-order-apikit-exception-strategy [ExternalCustomerId = #[json:ExternalCustomerId]] Start Exception: 404 : org.mule.module.apikit.exception.NotFoundException"
+				level="ERROR" doc:name="Log NotFoundException" doc:description="Logger for Resource Not Found Exception" category="offer-apikit-exception-strategy"/>
+			<set-property propertyName="Content-Type" value="application/json"
+				doc:name="Property" doc:description="Set Payload format as JSON"/>
+			<set-payload
+				value="{   &quot;ExternalCustomerId&quot;:&quot;&quot;,&quot;status&quot;: &quot;Failure&quot;,&quot;statusCode&quot;: &quot;10404&quot;,    &quot;statusDescription&quot;: &quot;Resource not found&quot;}"
+				doc:name="Set Exception  Payload" doc:description="Set Exception Payload" mimeType="application/json"/>
+		</apikit:mapping>
+		<apikit:mapping statusCode="405" doc:description="Handle Scenario for Method Not allowedException">
+			<apikit:exception
+				value="org.mule.module.apikit.exception.MethodNotAllowedException" />
+			<logger message="[mcd-uuid = #[(if(message.inboundProperties.'mcd-uuid' != null) {(message.inboundProperties.'mcd-uuid')} else {''})]] customer-order-apikit-exception-strategy [ExternalCustomerId = #[json:ExternalCustomerId]] Start Exception:405 :org.mule.module.apikit.exception.MethodNotAllowedException"
+				level="ERROR" doc:name="Log MethodNotAllowedException" doc:description="Logger for Method Not allowedException" category="offer-apikit-exception-strategy"/>
+			<set-property propertyName="Content-Type" value="application/json"
+				doc:name="Property" doc:description="Set Payload format as JSON"/>
+			<set-payload
+				value="{  &quot;ExternalCustomerId&quot;: &quot;&quot;,  &quot;status&quot;: &quot;Failure&quot;, &quot;statusCode&quot;: &quot;10100&quot;, &quot;statusDescription&quot;: &quot;Method not allowed&quot;}"
+				doc:name="Set Exception Payload" doc:description="Set Exception Payload"/>
+		</apikit:mapping>
+		<apikit:mapping statusCode="415" doc:description="Handle Scenario forUnsupported media type Exception">
+			<apikit:exception
+				value="org.mule.module.apikit.exception.UnsupportedMediaTypeException" />
+
+			<logger message="[mcd-uuid = #[(if(message.inboundProperties.'mcd-uuid' != null) {(message.inboundProperties.'mcd-uuid')} else {''})]] customer-order-apikit-exception-strategy [ExternalCustomerId = #[json:ExternalCustomerId]] Start Exception:415:org.mule.module.apikit.exception.UnsupportedMediaTypeException"
+				level="ERROR" doc:name="Log UnsupportedMediaTypeException" doc:description="Logger forUnsupported media type Exception" category="offer-apikit-exception-strategy"/>
+			<set-property propertyName="Content-Type" value="application/json"
+				doc:name="Property" doc:description="Set Payload format as JSON"/>
+            <set-payload value="{  &quot;ExternalCustomerId&quot;: &quot;#[json:ExternalCustomerId]&quot;,&quot;status&quot;: &quot;Failure&quot;,&quot;statusCode&quot;: &quot;10415&quot;,  &quot;statusDescription&quot;: &quot;Unsupported Media type&quot;}" doc:name="Set Payload"/>
+
+		</apikit:mapping>
+		
+<!-- 				    <apikit:mapping statusCode="429"  doc:description="Logger for Json Parse Exception"> -->
+<!--         <apikit:exception value="com.fasterxml.jackson.core.JsonParseException"/> -->
+<!--         <logger message="Start Exception:415:org.mule.module.apikit.exception.JsonParseExceptionTypeException" -->
+<!-- 				level="ERROR" doc:name="Log JsonParseException" doc:description="Logger JsonParseException type Exception" category="offer-apikit-exception-strategy"/> -->
+<!--         <set-property propertyName="Content-Type" value="application/json" -->
+<!-- 				doc:name="Property" doc:description="Set Payload format as JSON"/> -->
+<!--             <set-payload value="{  &quot;ExternalCustomerId&quot;: &quot;&quot;,&quot;status&quot;: &quot;Failure&quot;,&quot;statusCode&quot;: &quot;10415&quot;,  &quot;statusDescription&quot;: &quot;Wrong Request Payload&quot;}" doc:name="Set Payload"/> -->
+        
+<!--     </apikit:mapping>  -->
+
+		<apikit:mapping statusCode="400" doc:description="Handle Scenario for Bad Request Exception">
+			<apikit:exception
+				value="org.mule.module.apikit.exception.BadRequestException" />
+            <apikit:exception value="com.mulesoft.weave.mule.exception.WeaveExecutionException"/>
+            <apikit:exception value="org.mule.extension.validation.api.ValidationException"/>
+            <apikit:exception value="org.mule.extension.validation.api.MultipleValidationException"/>
+
+			<logger message="[mcd-uuid = #[(if(message.inboundProperties.'mcd-uuid' != null) {(message.inboundProperties.'mcd-uuid')} else {''})]] customer-order-apikit-exception-strategy [ExternalCustomerId = #[json:ExternalCustomerId]] Start Exception:400:org.mule.module.apikit.exception.BadRequestException"
+				level="ERROR" doc:name="Log BadRequestException" doc:description="Logger for Bad Request Exception" category="offer-apikit-exception-strategy"/>
+			<set-property propertyName="Content-Type" value="application/json"
+				doc:name="Property" doc:description="Set Payload format as JSON"/>
+            <choice doc:name="Choice">
+                <when expression="#[flowVars.ObjectPayload!=null]">
+                    <set-payload value="{&quot;ExternalCustomerId&quot;: &quot;#[flowVars.ObjectPayload.ExternalCustomerId]&quot;,&quot;status&quot;: &quot;Failure&quot;,&quot;statusCode&quot;: &quot;10120&quot;,&quot;statusDescription&quot;: &quot;Bad Request - Invalid input data&quot;}" doc:name="Set Payload"/>
+                </when>
+                <otherwise>
+                    <set-payload value="{&quot;ExternalCustomerId&quot;: &quot;#[json:ExternalCustomerId]&quot;,&quot;status&quot;: &quot;Failure&quot;,&quot;statusCode&quot;: &quot;10120&quot;,&quot;statusDescription&quot;: &quot;Bad Request - Invalid input data&quot;}" doc:name="Set Exception Payload" doc:description="Set Exception Payload"/>
+                </otherwise>
+            </choice>
+
+		</apikit:mapping>
+		<apikit:mapping statusCode="407" doc:description="Handle Scenario for Not Authorized Exception">
+			<apikit:exception value="javax.ws.rs.NotAuthorizedException" />
+			<logger message="[mcd-uuid = #[sessionVars.'mcd-uuid']] customer-order-apikit-exception-strategy [ExternalCustomerId = #[sessionVars.'ExternalCustomerId']] Start Exception:407:javax.ws.rs.NotAuthorizedException"
+				level="ERROR" doc:name="Log NotAuthorizedException" doc:description="Logger for Not Authorized Exception" category="offer-apikit-exception-strategy"/>
+			<set-property propertyName="Content-Type" value="application/json"
+				doc:name="Property" doc:description="Set Payload format as JSON"/>
+			<set-payload
+				value="{&quot;ExternalCustomerId&quot;: &quot;#[flowVars.ObjectPayload.ExternalCustomerId]&quot;, &quot;status&quot;: &quot;Failure&quot;, &quot;statusCode&quot;: &quot;10013&quot;, &quot;statusDescription&quot;: &quot;Proxy Authentication Required &quot; }"
+				doc:name="Set Exception Payload" doc:description="Set Exception Payload"/>
+		</apikit:mapping>
+		<apikit:mapping statusCode="500" doc:description="HAndle Scenario for Internal Server Exception">
+			<apikit:exception value="javax.ws.rs.InternalServerErrorException" />
+            <apikit:exception value="org.mule.module.apikit.exception.NotAcceptableException"/>
+			<logger message="[mcd-uuid = #[(if(message.inboundProperties.'mcd-uuid' != null) {(message.inboundProperties.'mcd-uuid')} else {''})]] customer-order-apikit-exception-strategy [ExternalCustomerId = #[json:ExternalCustomerId]] Start Exception:500:javax.ws.rs.InternalServerErrorException"
+				level="ERROR" doc:name="Log InternalServerErrorException" doc:description="Logger for Internal Server Exception" category="offer-apikit-exception-strategy"/>
+			<set-property propertyName="Content-Type" value="application/json"
+				doc:name="Property" doc:description="Set Payload format as JSON"/>
+            <choice doc:name="Choice">
+                <when expression="#[(flowVars.ObjectPayload)!=null &amp;&amp; (flowVars.ObjectPayload.ExternalCustomerId)!=null]">
+                    <set-payload value="{ &quot;ExternalCustomerId&quot;: &quot;#[flowVars.ObjectPayload.ExternalCustomerId]&quot;,&quot;status&quot;: &quot;Failure&quot;, &quot;statusCode&quot;: &quot;11900&quot;,&quot;statusDescription&quot;: &quot;Internal Server Error&quot;}" doc:name="Set Exception Payload" doc:description="Set Exception Payload"/>
+                </when>
+                <otherwise>
+                    <set-payload value="{&quot;ExternalCustomerId&quot;: &quot;#[json:ExternalCustomerId]&quot;,&quot;status&quot;: &quot;Failure&quot;,&quot;statusCode&quot;: &quot;11900&quot;,&quot;statusDescription&quot;: &quot;&quot;Internal Server Error&quot;}" doc:name="Set Exception Payload"/>
+                </otherwise>
+            </choice>
+
+		</apikit:mapping>
+		<apikit:mapping statusCode="503" doc:description="Handle Scenario for Internal Server Exception">
+			<apikit:exception value="javax.ws.rs.ServiceUnavailableException" />
+            <apikit:exception value="javax.ws.rs.ServerErrorException"/>
+            <apikit:exception value="java.util.concurrent.TimeoutException"/>
+			<logger message="[mcd-uuid = #[sessionVars.'mcd-uuid']] customer-order-apikit-exception-strategy [ExternalCustomerId = #[sessionVars.'ExternalCustomerId']] Start Exception:503:javax.ws.rs.ServiceUnavailableException"
+				level="ERROR" doc:name="Log ServiceUnavailableException" doc:description="Logger for Service Unavailable Exception" category="offer-apikit-exception-strategy"/>
+			<set-property propertyName="Content-Type" value="application/json"
+				doc:name="Property" doc:description="Set Payload format as JSON"/>
+			<set-payload
+				value="{&quot;ExternalCustomerId&quot;:  &quot;#[flowVars.ObjectPayload.ExternalCustomerId]&quot;,&quot;status&quot;: &quot;Failure&quot;,&quot;statusCode&quot;: &quot;10503&quot;, &quot;statusDescription&quot;: &quot;Gateway Timeout&quot; }"
+				doc:name="Set Exception Payload" doc:description="Set Exception Payload"/>
+		</apikit:mapping>
+
+ 		<apikit:mapping statusCode="513" doc:description="Logger for ObjectDoesNotExistException">
+			<apikit:exception value="org.mule.api.store.ObjectDoesNotExistException" />
+			<logger message="[mcd-uuid = #[sessionVars.'mcd-uuid']] customer-order-apikit-exception-strategy [ExternalCustomerId = #[sessionVars.'ExternalCustomerId']] Start Exception:513:org.mule.api.store.ObjectDoesNotExistException"
+				level="ERROR" doc:name="Log ObjectDoesNotExistException" doc:description="Logger forSoap Fault Exception" category="offer-apikit-exception-strategy"/>
+			<set-property propertyName="Content-Type" value="application/json"
+				doc:name="Property" doc:description="Set Payload format as JSON"/>
+			<set-payload
+				value="{&quot;ExternalCustomerId&quot;: &quot;#[flowVars.ObjectPayload.ExternalCustomerId]&quot;,&quot;status&quot;: &quot;Failure&quot;,&quot;statusCode&quot;: &quot;10018&quot;, &quot;statusDescription&quot;: &quot;Market Channel Key doesn't exist/found for Customer Order.&quot; }"
+				doc:name="Set Exception Payload" doc:description="Set Exception Payload"/>
+
+		</apikit:mapping>
+ 		
+ 		<apikit:mapping statusCode="516" doc:description="Logger forSoap Fault Exception">
+			<apikit:exception value="org.mule.module.ws.consumer.SoapFaultException" />
+			<logger message="[mcd-uuid = #[sessionVars.'mcd-uuid']] customer-order-apikit-exception-strategy [ExternalCustomerId = #[sessionVars.'ExternalCustomerId']] Start Exception:516:org.mule.module.ws.consumer.SoapFaultException"
+				level="ERROR" doc:name="Log SoapFaultException" doc:description="Logger forSoap Fault Exception" category="offer-apikit-exception-strategy"/>
+			<set-property propertyName="Content-Type" value="application/json"
+				doc:name="Property" doc:description="Set Payload format as JSON"/>
+			<set-payload
+				value="{&quot;ExternalCustomerId&quot;: &quot;#[flowVars.ObjectPayload.ExternalCustomerId]&quot;,&quot;status&quot;: &quot;Failure&quot;,&quot;statusCode&quot;: &quot;10516&quot;, &quot;statusDescription&quot;: &quot;Exception encountered at CIM&quot; }"
+				doc:name="Set Exception Payload" doc:description="Set Exception Payload"/>
+
+		</apikit:mapping>
+		
+		<apikit:mapping statusCode="519" doc:description="Logger for Missing Property">
+            <apikit:exception value="io.jsonwebtoken.MalformedJwtException"/>
+
+			<logger message="customer-order-apikit-exception-strategy Start Exception:519:io.jsonwebtoken.MalformedJwtException"
+				level="ERROR" doc:name="Log MessagingException" doc:description="Logger for Mule Messaging Exception" />
+			<set-property propertyName="Content-Type" value="application/json"
+				doc:name="Property" doc:description="Set Payload format as JSON"/>
+			<set-payload
+				value="{&quot;ExternalCustomerId&quot;:  &quot;#[message.inboundProperties.'jwtToken']&quot;, &quot;status&quot;: &quot;Failure&quot;, &quot;statusCode&quot;: &quot;10519&quot;, &quot;statusDescription&quot;:&quot;JWT strings must contain exactly 2 period characters&quot;}"
+				doc:name="Set Exception Payload" doc:description="Set Exception Payload"/>
+
+		</apikit:mapping>
+		
+		<apikit:mapping statusCode="517" doc:description="Logger for Mule Messaging Exception">
+			<apikit:exception value="io.jsonwebtoken.ExpiredJwtException" />
+			<logger message="[mcd-uuid = #[sessionVars.'mcd-uuid']] customer-order-apikit-exception-strategy [ExternalCustomerId = #[sessionVars.'ExternalCustomerId']] Start Exception:517:org.mule.api.MessagingException"
+				level="ERROR" doc:name="Log MessagingException" doc:description="Logger for Mule Messaging Exception" category="offer-apikit-exception-strategy"/>
+			<set-property propertyName="Content-Type" value="application/json"
+				doc:name="Property" doc:description="Set Payload format as JSON"/>
+			<set-payload
+				value="{&quot;ExternalCustomerId&quot;:   &quot;#[message.inboundProperties.'jwtToken']&quot;, &quot;status&quot;: &quot;Failure&quot;, &quot;statusCode&quot;: &quot;11900&quot;, &quot;statusDescription&quot;:&quot;JWT expired&quot;}"
+				doc:name="Set Exception Payload" doc:description="Set Exception Payload"/>
+
+		</apikit:mapping>
+
+       
+    </apikit:mapping-exception-strategy>
+</mule>

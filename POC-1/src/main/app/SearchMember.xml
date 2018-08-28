@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:apikit="http://www.mulesoft.org/schema/mule/apikit" xmlns:circuitbreaker="http://www.mulesoft.org/schema/mule/circuitbreaker" 
+	xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:tls="http://www.mulesoft.org/schema/mule/tls" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
+http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/circuitbreaker http://www.mulesoft.org/schema/mule/circuitbreaker/current/mule-circuitbreaker.xsd
+http://www.mulesoft.org/schema/mule/apikit http://www.mulesoft.org/schema/mule/apikit/current/mule-apikit.xsd">
+    <http:listener-config name="HTTP_Listener_Configuration" host="0.0.0.0" port="8081" doc:name="HTTP Listener Configuration" connectionIdleTimeout="2" basePath="/abc"/>
+    <http:request-config name="HTTP_Request_Configuration" host="872bf6de-6bbd-4a7c-a8ab-1370a07aadeb.mock.pstmn.io" port="443" basePath="/abc" doc:name="HTTP Request Configuration" protocol="HTTPS"/>
+    <http:request-config name="HTTP_Request_Configuration1" host="f18b5a2a-2903-47b2-a4fd-ba2ca7830764.mock.pstmn.io" port="443" basePath="/order" doc:name="HTTP Request Configuration" protocol="HTTPS"/>
+	<circuitbreaker:config name="Circuit_Breaker_Config" breakerName="Circuit_Breaker" tripResetTime="1" tripThreshold="3" doc:name="Circuit_Breaker_Config" />
+    <apikit:config name="Router" raml="E2E.raml" consoleEnabled="true" consolePath="console" keepRamlBaseUri="false" doc:name="Router">
+        <apikit:flow-mapping resource="/search" action="get" flow-ref="get:/search:Router"/>
+    </apikit:config>
+    <apikit:config name="Router1" raml="E2E.raml" consoleEnabled="true" consolePath="console" keepRamlBaseUri="false" doc:name="Router">
+        <apikit:flow-mapping resource="/search" action="get" content-type="application/json" flow-ref="get:/search:Router"/>
+    </apikit:config>
+    <sub-flow name="personalPolicy">
+        <logger level="INFO" doc:name="Logger"/>
+        <http:request config-ref="HTTP_Request_Configuration1" path="/" method="GET" doc:name="BackEndApi1"/>
+        <set-payload value="#[payload]" mimeType="application/json" doc:name="Set Payload"/>
+    </sub-flow>
+    <sub-flow name="groupPolicy">
+        <logger level="INFO" doc:name="Logger"/>
+        <http:request config-ref="HTTP_Request_Configuration" path="/" method="GET" doc:name="BackEndApi2"/>
+        <set-payload value="#[payload]" mimeType="text/plain" doc:name="Set Payload"/>
+    </sub-flow>
+    <flow name="mainFlow">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/*" doc:name="HTTPListener"/>
+        <apikit:router config-ref="Router" doc:name="APIkit Router"/>
+    </flow>
+    <flow name="get:/search:Router">
+        <circuitbreaker:filter config-ref="Circuit_Breaker_Config" doc:name="Circuit_Breaker_Filter"/>
+        <custom-transformer class="com.demoMock.SpecialCharHandler" doc:name="Java"/>
+        <logger message="JWT Token ID :::: #[flowVars.claimId] ::::::::::::::::" level="INFO" doc:name="Logger"/>
+        <set-variable variableName="policyType" value="#[message.inboundProperties.'policyType']" doc:name="Variable"/>
+        <choice doc:name="Choice">
+        <when expression="#[flowVars.policyType == &quot;group&quot;]">
+                <flow-ref name="groupPolicy" doc:name="groupPolicy"/>
+
+            </when>
+            <otherwise>
+                <flow-ref name="personalPolicy" doc:name="personalPolicy"/>
+            </otherwise>
+        </choice>
+        <exception-strategy ref="demoProject-apikit-exception-strategy" doc:name="Reference Exception Strategy"/>
+    </flow>
+</mule>

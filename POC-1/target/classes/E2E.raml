@@ -1,0 +1,39 @@
+#%RAML 0.8
+title: POC
+version: v1
+baseUri: http://localhost:8081/mock
+schemas:
+  - response: !include schemas/response.json
+/search:
+  displayName: To view the policy Details
+  get:
+    description: Customer Order
+    headers: !include traits/headers.raml
+    responses:
+      200:
+        headers:
+          mcd-uuid:
+            description: UUID Request unique identifier 
+            type: string
+        body:
+          application/json:
+            schema: response
+            example: !include Examples/Response-Examples/example-200.json
+      400:
+        headers:
+          mcd-uuid:
+            description: UUID Request unique identifier 
+            type: string
+        body:
+          application/json:
+            schema: response
+            example: !include examples/Response-Examples/example-400.json
+      404:
+        headers:
+          mcd-uuid:
+            description: UUID Request unique identifier 
+            type: string
+        body:
+          application/json:
+            schema: response
+            example: !include examples/Response-Examples/example-404.json
