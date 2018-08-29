@@ -14,9 +14,9 @@ http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/jso
 http://www.mulesoft.org/schema/mule/circuitbreaker http://www.mulesoft.org/schema/mule/circuitbreaker/current/mule-circuitbreaker.xsd
 http://www.mulesoft.org/schema/mule/apikit http://www.mulesoft.org/schema/mule/apikit/current/mule-apikit.xsd">
     <http:listener-config name="HTTP_Listener_Configuration" host="0.0.0.0" port="8081" doc:name="HTTP Listener Configuration" connectionIdleTimeout="2" basePath="/abc"/>
-    <http:request-config name="HTTP_Request_Configuration" host="872bf6de-6bbd-4a7c-a8ab-1370a07aadeb.mock.pstmn.io" port="443" basePath="/abc" doc:name="HTTP Request Configuration" protocol="HTTPS"/>
+    <http:request-config name="HTTP_Request_Configuration" host="872bf6de-6bbd-4a7c-a8ab-1370a07aadeb.mock.pstmn.io" port="443" basePath="/abc" doc:name="HTTP Request Configuration" connectionIdleTimeout="1" protocol="HTTPS"/>
     <http:request-config name="HTTP_Request_Configuration1" host="f18b5a2a-2903-47b2-a4fd-ba2ca7830764.mock.pstmn.io" port="443" basePath="/order" doc:name="HTTP Request Configuration" protocol="HTTPS"/>
-	<circuitbreaker:config name="Circuit_Breaker_Config" breakerName="Circuit_Breaker" tripResetTime="1" tripThreshold="3" doc:name="Circuit_Breaker_Config" />
+	<circuitbreaker:config name="Circuit_Breaker_Config" breakerName="Circuit_Breaker" tripResetTime="3000000" tripThreshold="3" doc:name="Circuit_Breaker_Config" />
     <apikit:config name="Router" raml="E2E.raml" consoleEnabled="true" consolePath="console" keepRamlBaseUri="false" doc:name="Router">
         <apikit:flow-mapping resource="/search" action="get" flow-ref="get:/search:Router"/>
     </apikit:config>
@@ -25,20 +25,22 @@ http://www.mulesoft.org/schema/mule/apikit http://www.mulesoft.org/schema/mule/a
     </apikit:config>
     <sub-flow name="personalPolicy">
         <logger level="INFO" doc:name="Logger"/>
-        <http:request config-ref="HTTP_Request_Configuration1" path="/" method="GET" doc:name="BackEndApi1"/>
+        <http:request config-ref="HTTP_Request_Configuration1" path="/" method="GET" doc:name="PersonalBackendApi"/>
         <set-payload value="#[payload]" mimeType="application/json" doc:name="Set Payload"/>
     </sub-flow>
     <sub-flow name="groupPolicy">
         <logger level="INFO" doc:name="Logger"/>
-        <http:request config-ref="HTTP_Request_Configuration" path="/" method="GET" doc:name="BackEndApi2"/>
+        <http:request config-ref="HTTP_Request_Configuration" path="/" method="GET" doc:name="groupBackEndApi"/>
         <set-payload value="#[payload]" mimeType="text/plain" doc:name="Set Payload"/>
     </sub-flow>
     <flow name="mainFlow">
         <http:listener config-ref="HTTP_Listener_Configuration" path="/*" doc:name="HTTPListener"/>
         <apikit:router config-ref="Router" doc:name="APIkit Router"/>
+        <exception-strategy ref="demoProject-apikit-exception-strategy" doc:name="Reference Exception Strategy"/>
     </flow>
     <flow name="get:/search:Router">
-        <circuitbreaker:filter config-ref="Circuit_Breaker_Config" doc:name="Circuit_Breaker_Filter"/>
+    <circuitbreaker:filter config-ref="Circuit_Breaker_Config" doc:name="Circuit Breaker"/>
+<!--         <flow-ref name="groupPolicy" doc:name="groupPolicy"/> -->
         <custom-transformer class="com.demoMock.SpecialCharHandler" doc:name="Java"/>
         <logger message="JWT Token ID :::: #[flowVars.claimId] ::::::::::::::::" level="INFO" doc:name="Logger"/>
         <set-variable variableName="policyType" value="#[message.inboundProperties.'policyType']" doc:name="Variable"/>
@@ -51,6 +53,54 @@ http://www.mulesoft.org/schema/mule/apikit http://www.mulesoft.org/schema/mule/a
                 <flow-ref name="personalPolicy" doc:name="personalPolicy"/>
             </otherwise>
         </choice>
-        <exception-strategy ref="demoProject-apikit-exception-strategy" doc:name="Reference Exception Strategy"/>
+        <choice-exception-strategy doc:name="Choice Exception Strategy">
+              <catch-exception-strategy when="#[exception.causedBy(java.net.ConnectException)]" doc:name="Catch Exception Strategy (Retry Exhaust Exception)">
+                     <circuitbreaker:trip config-ref="Circuit_Breaker_Config" tripOnException="java.net.ConnectException" doc:name="Circuit Breaker"/>
+            <set-variable variableName="resultCode" value="503" encoding="UTF-8" mimeType="application/java" doc:name="resultCode"/>
+                     <set-property propertyName="http.status" value="503" doc:name="Property"/>
+                <set-payload value="{&quot;ExternalCustomerId&quot;: &quot;abcdss&quot;,&quot;status&quot;: &quot;Failure&quot;,&quot;statusCode&quot;: &quot;10516&quot;, &quot;statusDescription&quot;: &quot;Exception encountered at CIM&quot; }" doc:name="Set Payload"/>
+        </catch-exception-strategy>
+        
+              <catch-exception-strategy when="#[exception.causedBy(java.util.concurrent.TimeoutException)]" doc:name="Catch Exception Strategy(service TimeoutException)">
+                     <circuitbreaker:trip config-ref="Circuit_Breaker_Config" tripOnException="java.util.concurrent.TimeoutException" doc:name="Circuit Breaker"/>
+                     <set-variable variableName="resultCode" value="504" encoding="UTF-8" mimeType="application/java" doc:name="resultCode"/>
+                     <set-property propertyName="http.status" value="504" doc:name="Property"/>
+                <set-payload value="{&quot;timeout&quot;}" doc:name="Set Payload"/>
+              </catch-exception-strategy>
+              
+              <catch-exception-strategy when="#[exception.causedBy(com.mulesoft.mule.devkit.circuitbreaker.CircuitOpenException)]" doc:name="Catch Exception Strategy (CicuitBreaker Filter Exception)">
+                  <circuitbreaker:trip config-ref="Circuit_Breaker_Config" tripOnException="java.util.concurrent.TimeoutException" doc:name="Circuit Breaker"/>
+                     <set-variable variableName="resultCode" value="503" encoding="UTF-8" mimeType="application/java" doc:name="resultCode"/>
+                     <set-property propertyName="http.status" value="503" doc:name="Property"/>
+                <set-payload value="{&quot;breaker filter&quot;}" doc:name="Set Payload"/>
+        </catch-exception-strategy>
+          <catch-exception-strategy when="#[exception.causedBy(org.mule.module.http.internal.request.ResponseValidatorException)]" doc:name="Catch Exception Strategy (ResponseValidatorException)">
+                  <circuitbreaker:trip config-ref="Circuit_Breaker_Config" tripOnException="org.mule.module.http.internal.request.ResponseValidatorException" doc:name="Circuit Breaker"/>
+                     <set-variable variableName="resultCode" value="503" encoding="UTF-8" mimeType="application/java" doc:name="resultCode"/>
+                     <set-property propertyName="http.status" value="503" doc:name="Property"/>
+                <set-payload value="{&quot;validator&quot;}" doc:name="Set Payload"/>
+        </catch-exception-strategy>
+        </choice-exception-strategy>
+<!--         <component class="com.mulesoft.training.demo.components.ConnectionComponent" doc:name="ConnectionComponent"/> -->
+  
+
+<!--         <circuitbreaker:filter config-ref="Circuit_Breaker_Config" doc:name="Circuit_Breaker_Filter"/> -->
+<!--         <custom-transformer class="com.demoMock.SpecialCharHandler" doc:name="Java"/> -->
+<!--         <logger message="JWT Token ID :::: #[flowVars.claimId] ::::::::::::::::" level="INFO" doc:name="Logger"/> -->
+<!--         <set-variable variableName="policyType" value="#[message.inboundProperties.'policyType']" doc:name="Variable"/> -->
+<!--         <choice doc:name="Choice"> -->
+<!--         <when expression="#[flowVars.policyType == &quot;group&quot;]"> -->
+<!--                 <flow-ref name="groupPolicy" doc:name="groupPolicy"/> -->
+
+<!--             </when> -->
+<!--             <otherwise> -->
+<!--                 <flow-ref name="personalPolicy" doc:name="personalPolicy"/> -->
+<!--             </otherwise> -->
+<!--         </choice> -->
+<!-- <catch-exception-strategy doc:name="Catch Exception Strategy"> -->
+<!--             <circuitbreaker:trip config-ref="Circuit_Breaker_Config" tripOnException="com.mulesoft.training.demo.exceptions.ConnectionNotAvailbleException" doc:name="Circuit Breaker"/> -->
+<!--             <logger message="Tripped on exception 'ConnectionNotAvailbleException'" level="INFO" doc:name="Logger"/> -->
+<!--             <set-payload value="#[groovy:message.getExceptionPayload().getRootException().getMessage()]" doc:name="Set Payload"/> -->
+<!--         </catch-exception-strategy> -->
     </flow>
 </mule>
