@@ -81,26 +81,5 @@ http://www.mulesoft.org/schema/mule/apikit http://www.mulesoft.org/schema/mule/a
                 <set-payload value="{&quot;validator&quot;}" doc:name="Set Payload"/>
         </catch-exception-strategy>
         </choice-exception-strategy>
-<!--         <component class="com.mulesoft.training.demo.components.ConnectionComponent" doc:name="ConnectionComponent"/> -->
-  
-
-<!--         <circuitbreaker:filter config-ref="Circuit_Breaker_Config" doc:name="Circuit_Breaker_Filter"/> -->
-<!--         <custom-transformer class="com.demoMock.SpecialCharHandler" doc:name="Java"/> -->
-<!--         <logger message="JWT Token ID :::: #[flowVars.claimId] ::::::::::::::::" level="INFO" doc:name="Logger"/> -->
-<!--         <set-variable variableName="policyType" value="#[message.inboundProperties.'policyType']" doc:name="Variable"/> -->
-<!--         <choice doc:name="Choice"> -->
-<!--         <when expression="#[flowVars.policyType == &quot;group&quot;]"> -->
-<!--                 <flow-ref name="groupPolicy" doc:name="groupPolicy"/> -->
-
-<!--             </when> -->
-<!--             <otherwise> -->
-<!--                 <flow-ref name="personalPolicy" doc:name="personalPolicy"/> -->
-<!--             </otherwise> -->
-<!--         </choice> -->
-<!-- <catch-exception-strategy doc:name="Catch Exception Strategy"> -->
-<!--             <circuitbreaker:trip config-ref="Circuit_Breaker_Config" tripOnException="com.mulesoft.training.demo.exceptions.ConnectionNotAvailbleException" doc:name="Circuit Breaker"/> -->
-<!--             <logger message="Tripped on exception 'ConnectionNotAvailbleException'" level="INFO" doc:name="Logger"/> -->
-<!--             <set-payload value="#[groovy:message.getExceptionPayload().getRootException().getMessage()]" doc:name="Set Payload"/> -->
-<!--         </catch-exception-strategy> -->
     </flow>
 </mule>
